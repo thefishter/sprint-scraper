@@ -1,6 +1,7 @@
 from seleniumwire import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
+from selenium.webdriver.common.action_chains import ActionChains
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 
@@ -64,7 +65,9 @@ print(driver.title, '\n')
 payeeInput = driver.find_element(By.ID, "fn-requestRecipient")
 for person in secrets.PAYEES:
 	payeeInput.send_keys(person["email"])
+	time.sleep(1)
 	payeeInput.send_keys(Keys.RETURN)
+	time.sleep(2)
 
 # next button only enabled when valid email(s) entered
 WebDriverWait(driver, 60).until(EC.element_to_be_clickable((
@@ -77,14 +80,42 @@ nextButton.click()
 WebDriverWait(driver, 60).until(EC.presence_of_element_located((
 	By.ID, "fn-amount")))
 
+totalInput = driver.find_element(By.ID, "fn-amount")
+splitButton = driver.find_element(By.ID, "split-request")
+
 # sum up total amount to request from everyone, cast to string to be inputted
 total = str(sum(secrets.LATEST_BILL_PLACEHOLDER))
+totalInput.send_keys(total)
 
 # paypal automatically assumes that you want each person to pay you this amount
-#	solution: change mode from _____ to Split Bill
+#	solution: change mode from Request Money to Split Bill
+splitButton.click()
 
 # paypal assumes next that you want this total to be equally split amongst payees
-# solution: manually edit each amount due
+# solution: wait til UI changes and then manually edit each amount due
+WebDriverWait(driver, 60).until(EC.presence_of_element_located((
+	By.ID, "split-request-tab")))
 
+actions = ActionChains(driver)
+actions.send_keys(Keys.TAB)
 
+numPayees = len(secrets.LATEST_BILL_PLACEHOLDER)
 
+for i in range(numPayees):
+	print(secrets.LATEST_BILL_PLACEHOLDER[i])
+	actions.send_keys(Keys.TAB) \
+				 .send_keys(Keys.BACK_SPACE * 6) \
+				 .send_keys(str(secrets.LATEST_BILL_PLACEHOLDER[i])) \
+				 .pause(1)
+
+actions.send_keys(Keys.TAB * 2)
+actions.send_keys(secrets.LATEST_BILL_MEMO_PLACEHOLDER)
+
+actions.pause(10)
+
+actions.send_keys(Keys.TAB)
+actions.send_keys(Keys.RETURN)
+
+actions.perform()
+
+# TO DO: check for success response

@@ -7,6 +7,7 @@ from selenium.webdriver.support import expected_conditions as EC
 import secrets
 import requests
 import json
+import datetime
 
 # Create a new instance of the Chrome driver
 driver = webdriver.Chrome('/usr/local/bin/chromedriver')
@@ -100,14 +101,16 @@ print(f"\n\n Surcharges: {surcharges}")
 print(f"\n Taxes: {taxes}")
 print(f"\n TOTAL SHARED COSTS: {taxes + surcharges}")
 
-split = round((taxes + surcharges) / 5, 2)
+split = round((taxes + surcharges) / secrets.NUM_ACCOUNTS, 2)
 
 final = [accountTotals[person["name"]] + split for person in secrets.PAYEES]
 # account for one person paying for two shares each month
 final[-1] += (accountTotals[secrets.PRIMARY] + split)
 
-print(f"\n\n\n FINAL TALLY: {final}\n\n\n")
+billMonth = datetime.datetime.strptime(startDate, "%Y-%m-%d").date().strftime("%B")
+memo = f"{billMonth} sprint bill for period ending {endDate}"
 
+print(f"\n\n\n FINAL TALLY FOR {billMonth.upper()}: {final}\n\n\n")
 
 
 # finally:

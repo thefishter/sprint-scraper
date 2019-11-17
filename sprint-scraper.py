@@ -10,9 +10,10 @@ import json
 
 # Create a new instance of the Chrome driver
 driver = webdriver.Chrome('/usr/local/bin/chromedriver')
-# driver.scopes = [ ".sprint.com/api/*" ]
+
+
 """
-	LOG INTO SPRINT AND NAVIGATE TO VIEW MY BILL
+	STEP 1: LOG INTO SPRINT AND NAVIGATE TO VIEW MY BILL
 """
 
 # go to my bill on sprint, which will redirect to a login page
@@ -24,11 +25,8 @@ print(driver.title, '\n')
 WebDriverWait(driver, 60).until(EC.presence_of_element_located((
 	By.ID, "loginHeaderUsername")))
 
-# print("COOOOOOOOKIES", driver.get_cookies())
-
 # find the form inputs and submit button element
-# stupidly on sprint's side, they do not follow the convention that IDs must be unique,
-# so we need to find both/ all and select the one we need
+# stupidly on sprint's side, they do not follow the convention that IDs must be unique, so we need to find both/ all and select the one we need
 possibleInputs = driver.find_elements(By.ID, "loginHeaderUsername")
 usernameInput = possibleInputs[1]
 
@@ -47,14 +45,18 @@ passwordInput.send_keys(secrets.PASSWORD)
 # submit the form
 submitButton.click()
 
+
+# TO DO: add code path for 2FA possibility
+
+
 """
-	PARSE BILL TO RETRIEVE DETAILS OF AMOUNTS DUE PER PERSON
+	STEP 2: PARSE BILL TO RETRIEVE DETAILS OF AMOUNTS DUE
 """
 
 # wait for the bill detail XHR request on the View My Bill page to complete
 billDetailRequest = driver.wait_for_request("/api/digital/V21-a/documents/8176664570-0477019317_145_201910_21?ban=477019317", timeout=60)
 # TO DO: use string interpolation to fix date in URL
-#				 test to see nothing else changes month to month
+#				 also test to see nothing else changes month to month
 
 # reformat JSON response (bytes object) to stringified JSON to python dict
 response = json.loads(billDetailRequest.response.body.decode("utf-8"))

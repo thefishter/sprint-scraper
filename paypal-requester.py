@@ -62,8 +62,9 @@ print(driver.title, '\n')
 
 # input box for payee - NB: autocomplete/ typeahead
 payeeInput = driver.find_element(By.ID, "fn-requestRecipient")
-payeeInput.send_keys(secrets.S_EMAIL)
-payeeInput.send_keys(Keys.TAB)
+for person in secrets.EMAILS:
+	payeeInput.send_keys(person.email)
+	payeeInput.send_keys(Keys.RETURN)
 
 # next button only enabled when valid email entered
 WebDriverWait(driver, 60).until(EC.element_to_be_clickable((

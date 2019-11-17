@@ -76,7 +76,7 @@ for account in accountsDetail:
 	if (reference == 0):
 		continue
 	# collect basic info
-	name = account["subscriber_name"].split()[0] # get first name only
+	name = account["subscriber_name"].split()[0].lower() # get first name only
 	number = account["phone_number"]
 	account_total = 0
 	# sum up bill items per account
@@ -90,6 +90,7 @@ for account in accountsDetail:
 	print("\n", name, number, account_total)
 
 
+# tally and split all shared costs evenly
 for item in globalBillItems:
 	surcharges += float(item["bill_item_summary"]["amount_ex_tax"])
 
@@ -98,6 +99,17 @@ print("\n\n\n Aggregated Account Totals:", accountTotals)
 print("\n\n Surcharges:", surcharges)
 print("\n Taxes:", taxes)
 print("\n TOTAL SHARED COSTS:", taxes + surcharges)
+
+split = (taxes + surcharges) / 5
+
+def finalize(email):
+	name = email.split('.')[0]
+	return accountTotals[name] + split
+
+final = list(map(finalize, secrets.EMAILS))
+final[-1] += (accountTotals[secrets.PRIMARY] + split)
+
+print("\n\n\n FINAL TALLY", final)
 
 
 

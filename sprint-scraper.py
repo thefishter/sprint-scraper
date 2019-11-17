@@ -97,7 +97,7 @@ print("\n\n\n Aggregated Account Totals:", accountTotals)
 
 print("\n\n Surcharges:", surcharges)
 print("\n Taxes:", taxes)
-print("\n TOTAL SHARED COSTS:", (taxes + surcharges))
+print("\n TOTAL SHARED COSTS:", taxes + surcharges)
 
 
 

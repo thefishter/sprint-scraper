@@ -94,22 +94,19 @@ for account in accountsDetail:
 for item in globalBillItems:
 	surcharges += float(item["bill_item_summary"]["amount_ex_tax"])
 
-print("\n\n\n Aggregated Account Totals:", accountTotals)
+print(f"\n\n\n Aggregated Account Totals: {accountTotals}")
 
-print("\n\n Surcharges:", surcharges)
-print("\n Taxes:", taxes)
-print("\n TOTAL SHARED COSTS:", taxes + surcharges)
+print(f"\n\n Surcharges: {surcharges}")
+print(f"\n Taxes: {taxes}")
+print(f"\n TOTAL SHARED COSTS: {taxes + surcharges}")
 
-split = (taxes + surcharges) / 5
+split = round((taxes + surcharges) / 5, 2)
 
-def finalize(email):
-	name = email.split('.')[0]
-	return accountTotals[name] + split
-
-final = list(map(finalize, secrets.EMAILS))
+final = [accountTotals[person["name"]] + split for person in secrets.PAYEES]
+# account for one person paying for two shares each month
 final[-1] += (accountTotals[secrets.PRIMARY] + split)
 
-print("\n\n\n FINAL TALLY", final)
+print(f"\n\n\n FINAL TALLY: {final}\n\n\n")
 
 
 

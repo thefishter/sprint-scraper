@@ -60,13 +60,13 @@ WebDriverWait(driver, 60).until(EC.presence_of_element_located((
 
 print(driver.title, '\n')
 
-# input box for payee - NB: autocomplete/ typeahead
+# add all payees to input box - NB: has autocomplete/ typeahead functionality
 payeeInput = driver.find_element(By.ID, "fn-requestRecipient")
-for person in secrets.EMAILS:
-	payeeInput.send_keys(person.email)
+for person in secrets.PAYEES:
+	payeeInput.send_keys(person["email"])
 	payeeInput.send_keys(Keys.RETURN)
 
-# next button only enabled when valid email entered
+# next button only enabled when valid email(s) entered
 WebDriverWait(driver, 60).until(EC.element_to_be_clickable((
 	By.CSS_SELECTOR, "span.recipient-next > button")))
 
@@ -77,9 +77,14 @@ nextButton.click()
 WebDriverWait(driver, 60).until(EC.presence_of_element_located((
 	By.ID, "fn-amount")))
 
+# sum up total amount to request from everyone, cast to string to be inputted
+total = str(sum(secrets.LATEST_BILL_PLACEHOLDER))
 
-# TO DO: request actual amounts from each person
-# 			 maybe add everyone on previous page, and then use split bill feature?
-#				 will have to total amount due (except me) and input that at the top
-#				 then edit each amount manually
+# paypal automatically assumes that you want each person to pay you this amount
+#	solution: change mode from _____ to Split Bill
+
+# paypal assumes next that you want this total to be equally split amongst payees
+# solution: manually edit each amount due
+
+
 

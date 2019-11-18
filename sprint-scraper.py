@@ -8,6 +8,7 @@ import secrets
 import requests
 import json
 import datetime
+import paypal_requester
 
 # Create a new instance of the Chrome driver
 driver = webdriver.Chrome('/usr/local/bin/chromedriver')
@@ -103,14 +104,17 @@ print(f"\n TOTAL SHARED COSTS: {taxes + surcharges}")
 
 split = round((taxes + surcharges) / secrets.NUM_ACCOUNTS, 2)
 
-final = [accountTotals[person["name"]] + split for person in secrets.PAYEES]
+final_amounts_due = [accountTotals[person["name"]] + split for person in secrets.PAYEES]
 # account for one person paying for two shares each month
-final[-1] += (accountTotals[secrets.PRIMARY] + split)
+final_amounts_due[-1] += (accountTotals[secrets.PRIMARY] + split)
 
 billMonth = datetime.datetime.strptime(startDate, "%Y-%m-%d").date().strftime("%B")
 memo = f"{billMonth} sprint bill for period ending {endDate}"
 
-print(f"\n\n\n FINAL TALLY FOR {billMonth.upper()}: {final}\n\n\n")
+print(f"\n\n\n FINAL TALLY FOR {billMonth.upper()}: {final_amounts_due}\n\n\n")
+
+paypal_requester.request_payments(driver, final_amounts_due, memo):
+
 
 
 # finally:

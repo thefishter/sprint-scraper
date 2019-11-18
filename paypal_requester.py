@@ -1,4 +1,3 @@
-from seleniumwire import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.common.action_chains import ActionChains
@@ -9,9 +8,12 @@ from selenium.webdriver.support import expected_conditions as EC
 import secrets
 import time
 
-# # Create a new instance of the Chrome driver
-# driver = webdriver.Chrome('/usr/local/bin/chromedriver')
 
+"""
+
+	Function that uses a designated webdriver to log into Paypal.com and request various amounts of money from multiple people simultaneously.
+
+"""
 def request_payments(driver, amounts_due, memo):
 	"""
 		STEP 1: LOG INTO PAYPAL AND NAVIGATE TO MONEY REQUESTS PAGE
@@ -84,7 +86,7 @@ def request_payments(driver, amounts_due, memo):
 
 
 	"""
-		STEP 3: SUBMIT TO EACH PAYEE FOR RESPECTIVE AMOUNTS CALCULATED FROM BILL
+		STEP 3: SUBMIT REQUEST TO EACH PAYEE FOR RESPECTIVE AMOUNTS CALCULATED FROM BILL
 	"""
 
 	# wait for request preview page to load
@@ -128,6 +130,8 @@ def request_payments(driver, amounts_due, memo):
 	# submit requests
 	actions.send_keys(Keys.TAB)
 	actions.send_keys(Keys.RETURN)
+
+	actions.pause(10)
 
 	actions.perform()
 

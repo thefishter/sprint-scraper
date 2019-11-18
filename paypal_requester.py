@@ -69,6 +69,7 @@ def request_payments(driver, amounts_due, memo):
 	# add all payees to input box - NB: has autocomplete/ typeahead functionality
 	payeeInput = driver.find_element(By.ID, "fn-requestRecipient")
 	for person in secrets.PAYEES:
+		time.sleep(1)
 		payeeInput.send_keys(person["email"])
 		time.sleep(1)
 		payeeInput.send_keys(Keys.RETURN)

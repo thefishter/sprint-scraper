@@ -3,12 +3,11 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 
-# credentials stored locally and .gitignore-d
-import secrets
+from paypal_requester import request_payments
+import secrets			# credentials stored locally and .gitignore-d
 import requests
 import json
 import datetime
-import paypal_requester
 
 # Create a new instance of the Chrome driver
 driver = webdriver.Chrome('/usr/local/bin/chromedriver')
@@ -70,6 +69,21 @@ globalBillItems = response["global_bill_items"]
 taxes = float(response["total_tax"]["amount"])
 surcharges = 0
 
+# tally and split all shared costs evenly
+for item in globalBillItems:
+	surcharges += float(item["bill_item_summary"]["amount_ex_tax"])
+
+print(f"\n\n Surcharges: {surcharges}")
+print(f"\n Taxes: {taxes}")
+print(f"\n TOTAL SHARED COSTS: {taxes + surcharges}")
+
+split = round((taxes + surcharges) / secrets.NUM_ACCOUNTS, 2)
+
+
+"""
+	STEP 3: FINALIZE AMOUNTS DUE PER PERSON
+"""
+
 # aggregate all non shared costs per person
 accountTotals = {}
 for account in accountsDetail:
@@ -89,36 +103,25 @@ for account in accountsDetail:
 		accountTotals[name] = account_total
 	else:
 		accountTotals[name] += account_total
-	print("\n", name, number, account_total)
-
-
-# tally and split all shared costs evenly
-for item in globalBillItems:
-	surcharges += float(item["bill_item_summary"]["amount_ex_tax"])
 
 print(f"\n\n\n Aggregated Account Totals: {accountTotals}")
 
-print(f"\n\n Surcharges: {surcharges}")
-print(f"\n Taxes: {taxes}")
-print(f"\n TOTAL SHARED COSTS: {taxes + surcharges}")
-
-split = round((taxes + surcharges) / secrets.NUM_ACCOUNTS, 2)
-
+# add 5-way split of shared costs to each amount due
 final_amounts_due = [accountTotals[person["name"]] + split for person in secrets.PAYEES]
 # account for one person paying for two shares each month
 final_amounts_due[-1] += (accountTotals[secrets.PRIMARY] + split)
 
+# prepare memo to accompany paypal request
 billMonth = datetime.datetime.strptime(startDate, "%Y-%m-%d").date().strftime("%B")
 memo = f"{billMonth} sprint bill for period ending {endDate}"
 
 print(f"\n\n\n FINAL TALLY FOR {billMonth.upper()}: {final_amounts_due}\n\n\n")
 
-paypal_requester.request_payments(driver, final_amounts_due, memo):
+# navigate to paypal, log in, and request amounts for each payee
+request_payments(driver, final_amounts_due, memo)
 
 
-
-# finally:
-# 	driver.quit()
+driver.quit()
 
 
 

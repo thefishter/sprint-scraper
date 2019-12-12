@@ -2,11 +2,14 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 
+from time import strptime
+
 import secrets			# credentials stored locally and .gitignore-d
 import json
+import calendar
 
 
-def parse_bill(driver):
+def parse_bill(driver, billYear, billMonth, billIssueNumber):
 	"""
 		STEP 1: LOG INTO SPRINT AND NAVIGATE TO VIEW MY BILL
 	"""
@@ -47,10 +50,32 @@ def parse_bill(driver):
 		STEP 2: INTERCEPT XHR REQUEST TO GET BILL DETAIL
 	"""
 
+	billMonth = int(billMonth)
+	dateString = f"{calendar.month_abbr[billMonth]} 20"
+
+	WebDriverWait(driver, 60).until(EC.presence_of_element_located((
+		By.CLASS_NAME, "open-call-filters")))
+	billPeriodSelect = driver.find_element(By.CLASS_NAME, "open-call-filters")
+
+	print(f"found bill period dates {billPeriodSelect.text}")
+
+	# if we're looking for a previous bill, deal with dropdown
+	if not billPeriodSelect.text.endswith(dateString):
+		billPeriodSelect.click()
+
+		displayMonthName = billPeriodSelect.text.split()[-2]
+		displayMonth = strptime(displayMonthName,'%b').tm_mon
+
+		print(f"current month: {displayMonth}")
+		print(f"we want: {str(billMonth).zfill(2)}")
+		print(f"that is {displayMonth - billMonth} months ago")
+
+		billPeriods = driver.find_elements(By.CLASS_NAME, "bill-col")
+		requestedBill = billPeriods[displayMonth - billMonth]
+		requestedBill.click()
+
 	# wait for the bill detail XHR request on the View My Bill page to complete
-	billDetailRequest = driver.wait_for_request("/api/digital/V21-a/documents/8176664570-0477019317_145_201910_21?ban=477019317", timeout=60)
-	# TO DO: use string interpolation to fix date in URL
-	#				 also test to see nothing else changes month to month
+	billDetailRequest = driver.wait_for_request(f"/api/digital/V21-a/documents/8176664570-0477019317_{billIssueNumber}_{billYear}{str(billMonth).zfill(2)}_21?ban=477019317", timeout=60)
 
 	# reformat JSON response (bytes object) to stringified JSON to python dict
 	response = json.loads(billDetailRequest.response.body.decode("utf-8"))
@@ -101,10 +126,12 @@ def calculate_amounts_due(driver, response):
 
 	print(f"\n\n\n Aggregated Account Totals: {accountTotals}")
 
-	# add 5-way split of shared costs to each amount due
+	# add split of shared costs to each amount due
+	# NB: the autopay discount of $5 per account is voided below
 	split = round((taxes + surcharges) / secrets.NUM_ACCOUNTS, 2)
-	final_amounts_due = [accountTotals[person["name"]] + split for person in secrets.PAYEES]
+	final_amounts_due = [accountTotals[person["name"]] + split + 5 for person in secrets.PAYEES]
 	# account for one person paying for two shares each month
-	final_amounts_due[-1] += (accountTotals[secrets.PRIMARY] + split)
+	final_amounts_due[-1] += (accountTotals[secrets.PRIMARY] + split + 5)
 
-	return final_amounts_due
+	# send the final amounts in cents (Paypal doesn't recognize keyboard input of decimal)
+	return [int(total * 100) for total in final_amounts_due]
